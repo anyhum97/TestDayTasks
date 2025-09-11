@@ -1,0 +1,14 @@
+/Users/iliasushenkov/Desktop/WorldEngine/WorldEngine/WorldEngine/bin/Debug/net9.0/WorldEngine
+/Users/iliasushenkov/Desktop/WorldEngine/WorldEngine/WorldEngine/bin/Debug/net9.0/WorldEngine.deps.json
+/Users/iliasushenkov/Desktop/WorldEngine/WorldEngine/WorldEngine/bin/Debug/net9.0/WorldEngine.runtimeconfig.json
+/Users/iliasushenkov/Desktop/WorldEngine/WorldEngine/WorldEngine/bin/Debug/net9.0/WorldEngine.dll
+/Users/iliasushenkov/Desktop/WorldEngine/WorldEngine/WorldEngine/bin/Debug/net9.0/WorldEngine.pdb
+/Users/iliasushenkov/Desktop/WorldEngine/WorldEngine/WorldEngine/obj/Debug/net9.0/WorldEngine.GeneratedMSBuildEditorConfig.editorconfig
+/Users/iliasushenkov/Desktop/WorldEngine/WorldEngine/WorldEngine/obj/Debug/net9.0/WorldEngine.AssemblyInfoInputs.cache
+/Users/iliasushenkov/Desktop/WorldEngine/WorldEngine/WorldEngine/obj/Debug/net9.0/WorldEngine.AssemblyInfo.cs
+/Users/iliasushenkov/Desktop/WorldEngine/WorldEngine/WorldEngine/obj/Debug/net9.0/WorldEngine.csproj.CoreCompileInputs.cache
+/Users/iliasushenkov/Desktop/WorldEngine/WorldEngine/WorldEngine/obj/Debug/net9.0/WorldEngine.dll
+/Users/iliasushenkov/Desktop/WorldEngine/WorldEngine/WorldEngine/obj/Debug/net9.0/refint/WorldEngine.dll
+/Users/iliasushenkov/Desktop/WorldEngine/WorldEngine/WorldEngine/obj/Debug/net9.0/WorldEngine.pdb
+/Users/iliasushenkov/Desktop/WorldEngine/WorldEngine/WorldEngine/obj/Debug/net9.0/WorldEngine.genruntimeconfig.cache
+/Users/iliasushenkov/Desktop/WorldEngine/WorldEngine/WorldEngine/obj/Debug/net9.0/ref/WorldEngine.dll
