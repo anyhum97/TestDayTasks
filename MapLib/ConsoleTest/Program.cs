@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
-
-using MapLib;
+using MapLib.Map;
 using MapLib.Map.Enums;
 using MapLib.Map.Objects;
 
@@ -13,16 +12,16 @@ namespace ConsoleTest
 
 		private const int _defaultIterations = 10;
 
-		public delegate void BenchmarkWork(MapManager manager, int width, int height, int iterations);
+		public delegate void BenchmarkWork(ConcurrentMapManager manager, int width, int height, int iterations);
 
 		public static void Main()
 		{
-			Benchmark(Test2, 1000, 1000, 5);
+			Benchmark(Test1, 1000, 1000, 5);
 		}
 
 		private static void Benchmark(BenchmarkWork work, int width = _defaultWidth, int height = _defaultHeight, int iterations = _defaultIterations)
 		{
-			var manager = new MapManager(width, height);
+			var manager = new ConcurrentMapManager(width, height);
 
 			var stopwatch = new Stopwatch();
 
@@ -40,7 +39,7 @@ namespace ConsoleTest
 			Console.ReadKey();
 		}
 
-		private static void Test1(MapManager manager, int width, int height, int iterations)
+		private static void Test1(ConcurrentMapManager manager, int width, int height, int iterations)
 		{
 			var random = new Random();
 
@@ -69,7 +68,7 @@ namespace ConsoleTest
 			}
 		}
 
-		private static void Test2(MapManager manager, int width, int height, int iterations)
+		private static void Test2(ConcurrentMapManager manager, int width, int height, int iterations)
 		{
 			var random = new Random();
 

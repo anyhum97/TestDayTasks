@@ -1,24 +1,22 @@
 ﻿using MapLib.Map.Objects;
-
 using System.Runtime.CompilerServices;
 
-namespace MapLib
+namespace MapLib.Map
 {
+	/// <summary>
+	/// Класс для работы с тайловой картой в однопоточной среде.
+	/// </summary>
 	public class MapManager
 	{
 		private const int _defaultWidth = 1000;
 		private const int _defaultHeight = 1000;
 
 		private readonly int _width = _defaultWidth;
-
 		private readonly int _height = _defaultHeight;
 
 		private readonly Tile[] _tiles;
 
-		private readonly ReaderWriterLockSlim _locker = new();
-
 		public int Height => _height;
-
 		public int Width => _width;
 
 		public MapManager(int width = _defaultWidth, int height = _defaultHeight)
@@ -28,9 +26,7 @@ namespace MapLib
 			_width = width;
 			_height = height;
 
-			var count = _width * _height;
-
-			_tiles = new Tile[count];
+			_tiles = new Tile[_width * _height];
 		}
 
 		public MapManager(Tile[] tiles, int width, int height)
@@ -56,71 +52,66 @@ namespace MapLib
 		}
 
 		/// <summary>
-		/// Позволяет потокобезопасно получить тайл по координатам.
+		/// Получает тайл по координатам.
 		/// </summary>
 		public Tile GetTile(int x, int y)
 		{
-			_locker.EnterReadLock();
+			var index = GetIndex(x, y);
 
-			try
-			{
-				var index = GetIndex(x, y);
-			
-				return _tiles[index];
-			}
-			finally
-			{
-				_locker.ExitReadLock();
-			}
+			return _tiles[index];
 		}
-		
+
 		/// <summary>
-		/// Позволяет потокобезопасно установить тайл по координатам.
+		/// Устанавливает тайл по координатам.
 		/// </summary>
 		public void SetTile(int x, int y, Tile tile)
 		{
-			_locker.EnterWriteLock();
-			
-			try
-			{
-				var index = GetIndex(x, y);
+			var index = GetIndex(x, y);
 
-				_tiles[index] = tile;
-			}
-			finally
+			_tiles[index] = tile;
+		}
+
+		/// <summary>
+		/// Заполняет прямоугольную область тайлами.
+		/// </summary>
+		public void FillArea(int startX, int startY, int width, int height, Tile tile)
+		{
+			int rowEnd = startY + height;
+			int colEnd = startX + width;
+
+			for(int y=startY; y<rowEnd; ++y)
 			{
-				_locker.ExitWriteLock();
+				int index = y * _width + startX;
+
+				for(int x=startX; x<colEnd; ++x, ++index)
+				{
+					_tiles[index] = tile;
+				}
 			}
 		}
 
 		/// <summary>
-		/// Потокобезопасно заполняет прямоугольную область тайлами.
+		/// Проверяет возможность размещения объекта в прямоугольной области.
 		/// </summary>
-		/// <param name="startX">Начальная координата X (включительно)</param>
-		/// <param name="startY">Начальная координата Y (включительно)</param>
-		/// <param name="width">Ширина области</param>
-		/// <param name="height">Высота области</param>
-		/// <param name="tile">Тайл для заполнения</param>
-		public void FillArea(int startX, int startY, int width, int height, Tile tile)
+		public bool CanPlaceInArea(int startX, int startY, int width, int height)
 		{
-			_locker.EnterWriteLock();
+			int rowEnd = startY + height;
+			int colEnd = startX + width;
 
-			try
+			for (int y=startY; y<rowEnd; ++y)
 			{
-				for(int y=startY; y<startY+height; ++y)
-				{
-					for(int x=startX; x<startX+width; ++x)
-					{
-						var index = GetIndex(x, y);
+				int index = y * _width + startX;
 
-						_tiles[index] = tile;
+				for(int x=startX; x<colEnd; ++x, ++index)
+				{
+					if(!_tiles[index].CanPlaceHere())
+					{
+						return false;
 					}
 				}
 			}
-			finally
-			{
-				_locker.ExitWriteLock();
-			}
+
+			return true;
 		}
 
 		private static void ValidateBounds(int width, int height)
