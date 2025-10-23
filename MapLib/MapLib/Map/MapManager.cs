@@ -1,90 +1,128 @@
-﻿using MapLib.Map.Enums;
-using MapLib.Map.Helpers;
-using MapLib.Map.Objects;
+﻿using MapLib.Map.Objects;
 
 using System.Runtime.CompilerServices;
 
 namespace MapLib
 {
-	public static class MapManager
+	public class MapManager
 	{
-		private const int _width = 1000;
-		private const int _height = 1000;
-		
-		private const int _count = _width * _height;
-		
-		private const int _minTerritoryCount = 2;
-		private const int _maxTerritoryCount = 1000;
+		private const int _defaultWidth = 1000;
+		private const int _defaultHeight = 1000;
 
-		private static readonly long[] _tiles = new long[_count];
-		
-		private static readonly Dictionary<int, TerritoryInfo> _territories = new(_maxTerritoryCount);
-		
-		/// <summary>
-		/// Генерация карты-заглушки для PoC
-		/// </summary>
-		public static void GenerateMap(int territoryCount = 100)
+		private readonly int _width = _defaultWidth;
+
+		private readonly int _height = _defaultHeight;
+
+		private readonly Tile[] _tiles;
+
+		private readonly ReaderWriterLockSlim _locker = new();
+
+		public int Height => _height;
+
+		public int Width => _width;
+
+		public MapManager(int width = _defaultWidth, int height = _defaultHeight)
 		{
-			territoryCount = Math.Max(territoryCount, _minTerritoryCount);
-			territoryCount = Math.Min(territoryCount, _maxTerritoryCount);
-			
-			var random = new Random();
-			
-			// Инициализация тайлов случайными значенифми
-			
-			Span<long> tilesSpan = _tiles;
-			
-			for(int i=0; i<_count; ++i)
+			ValidateBounds(width, height);
+
+			_width = width;
+			_height = height;
+
+			var count = _width * _height;
+
+			_tiles = new Tile[count];
+		}
+
+		public MapManager(Tile[] tiles, int width, int height)
+		{
+			ValidateBounds(width, height);
+			ValidateArray(tiles, width, height);
+
+			_width = width;
+			_height = height;
+
+			_tiles = tiles;
+		}
+
+		public MapManager(IEnumerable<Tile> tiles, int width, int height)
+		{
+			ValidateBounds(width, height);
+			ValidateCollection(tiles, width, height);
+
+			_width = width;
+			_height = height;
+
+			_tiles = tiles.ToArray();
+		}
+
+		public Tile GetTile(int x, int y)
+		{
+			_locker.EnterReadLock();
+
+			try
 			{
-				var tileType = (TileType)random.Next(0, 2);
-
-				var territoryId = random.Next(1, territoryCount + 1); 
-
-				tilesSpan[i] = TileEncoder.Encode(tileType, territoryId);
-			}
+				var index = GetIndex(x, y);
 			
-			// Создание словаря территорий
-
-			_territories.Clear();
-
-			for(int t=1; t<=territoryCount; ++t)
+				return _tiles[index];
+			}
+			finally
 			{
-				_territories[t] = new TerritoryInfo
-				{
-					Id = t,
-					Name = $"Territory {t}",
-				};
+				_locker.ExitReadLock();
 			}
 		}
 		
-		public static long GetTile(int x, int y)
+		public void SetTile(int x, int y, Tile tile)
 		{
-			var index = GetIndex(x, y);
+			_locker.EnterWriteLock();
 			
-			return _tiles[index];
+			try
+			{
+				var index = GetIndex(x, y);
+
+				_tiles[index] = tile;
+			}
+			finally
+			{
+				_locker.ExitWriteLock();
+			}
 		}
-		
-		public static TileType GetTileType(int x, int y)
+
+		private void ValidateBounds(int width, int height)
 		{
-			var index = GetIndex(x, y);
-			
-			return _tiles[index].GetTileType();
+			ArgumentOutOfRangeException.ThrowIfLessThan(width, 1, nameof(width));
+			ArgumentOutOfRangeException.ThrowIfLessThan(height, 1, nameof(height));
 		}
-		
-		public static int GetTerritoryId(int x, int y)
+
+		private void ValidateArray(Tile[] tiles, int width, int height)
 		{
-			var index = GetIndex(x, y);
-			
-			return _tiles[index].GetTerritoryId();
+			ArgumentNullException.ThrowIfNull(tiles);
+
+			var length = tiles.Length;
+
+			var expected = width * height;
+
+			if(length != expected)
+			{
+				throw new ArgumentOutOfRangeException();
+			}
 		}
-		
-		public static TerritoryInfo GetTerritoryInfo(int id)
+
+		private static void ValidateCollection(IEnumerable<Tile> tiles, int width, int height)
 		{
-			return _territories[id];
+			ArgumentNullException.ThrowIfNull(tiles);
+
+			var count = tiles.Count();
+
+			var expected = width * height;
+
+			if(count != expected)
+			{
+				throw new ArgumentOutOfRangeException();
+			}
 		}
-		
+
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private static int GetIndex(int x, int y)
+		private int GetIndex(int x, int y)
 		{
 			return y * _width + x;
 		}

@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapLib", "MapLib\MapLib.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{FEB2464D-0F75-46C5-A0D1-ECC0F8F5EC57}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleTest", "ConsoleTest\ConsoleTest.csproj", "{C391BF25-0E58-4661-B221-B22FB7BAC788}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{FEB2464D-0F75-46C5-A0D1-ECC0F8F5EC57}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FEB2464D-0F75-46C5-A0D1-ECC0F8F5EC57}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FEB2464D-0F75-46C5-A0D1-ECC0F8F5EC57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C391BF25-0E58-4661-B221-B22FB7BAC788}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C391BF25-0E58-4661-B221-B22FB7BAC788}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C391BF25-0E58-4661-B221-B22FB7BAC788}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C391BF25-0E58-4661-B221-B22FB7BAC788}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

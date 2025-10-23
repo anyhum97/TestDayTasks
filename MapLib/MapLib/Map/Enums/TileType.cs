@@ -1,9 +1,8 @@
 ﻿namespace MapLib.Map.Enums
 {
-    public enum TileType
+    public enum TileType : ushort
     {
 		Plain,
 		Mountain,
-		Grass,
     }
 }
