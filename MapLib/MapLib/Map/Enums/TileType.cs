@@ -4,5 +4,6 @@
     {
 		Plain,
 		Mountain,
+		Grass,
     }
 }

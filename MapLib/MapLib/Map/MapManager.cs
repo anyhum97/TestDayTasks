@@ -38,7 +38,7 @@ namespace MapLib
 			{
 				var tileType = (TileType)random.Next(0, 2);
 
-				var territoryId = random.Next(territoryCount); 
+				var territoryId = random.Next(1, territoryCount + 1); 
 
 				tilesSpan[i] = TileEncoder.Encode(tileType, territoryId);
 			}

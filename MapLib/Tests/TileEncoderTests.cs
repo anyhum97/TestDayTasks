@@ -3,7 +3,7 @@ using MapLib.Map.Helpers;
 
 namespace Tests
 {
-	/// Проверяем корректнотсь работы класс TileEncoder
+	/// Проверяем корректнотсь работы класса TileEncoder
 	/// Нужно проверить, что конвертация работает правильно для всех значений
 	public class TileEncoderTests
 	{
