@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35818.85
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapLib", "MapLib\MapLib.csproj", "{2C5D3489-5AC4-43E4-9908-9AD89DEC5D5A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{FEB2464D-0F75-46C5-A0D1-ECC0F8F5EC57}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2C5D3489-5AC4-43E4-9908-9AD89DEC5D5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C5D3489-5AC4-43E4-9908-9AD89DEC5D5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C5D3489-5AC4-43E4-9908-9AD89DEC5D5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C5D3489-5AC4-43E4-9908-9AD89DEC5D5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FEB2464D-0F75-46C5-A0D1-ECC0F8F5EC57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FEB2464D-0F75-46C5-A0D1-ECC0F8F5EC57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FEB2464D-0F75-46C5-A0D1-ECC0F8F5EC57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FEB2464D-0F75-46C5-A0D1-ECC0F8F5EC57}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A779F133-10D8-4ACA-B097-1BB7CCB277DA}
+	EndGlobalSection
+EndGlobal
