@@ -1,26 +1,48 @@
-﻿using MapLib;
+﻿using System.Diagnostics;
+
+using MapLib;
 using MapLib.Map.Enums;
 using MapLib.Map.Objects;
-using System.Diagnostics;
 
 namespace ConsoleTest
 {
 	public static class Program
 	{
+		private const int _defaultWidth = 1000;
+		private const int _defaultHeight = 1000;
+
+		private const int _defaultIterations = 10;
+
+		public delegate void BenchmarkWork(MapManager manager, int width, int height, int iterations);
+
 		public static void Main()
 		{
-			const int width = 1000;
-			const int height = 1000;
+			Benchmark(Test2, 1000, 1000, 5);
+		}
 
-			const int iterations = 10;
-
+		private static void Benchmark(BenchmarkWork work, int width = _defaultWidth, int height = _defaultHeight, int iterations = _defaultIterations)
+		{
 			var manager = new MapManager(width, height);
-			
-			var random = new Random();
 
 			var stopwatch = new Stopwatch();
 
+			work.Invoke(manager, width, height, iterations); // Прогреваем
+
 			stopwatch.Start();
+
+			work.Invoke(manager, width, height, iterations);
+
+			stopwatch.Stop();
+
+			var elapsed = stopwatch.Elapsed;
+
+			Console.WriteLine($"Elapsed {elapsed.TotalMilliseconds} ms");
+			Console.ReadKey();
+		}
+
+		private static void Test1(MapManager manager, int width, int height, int iterations)
+		{
+			var random = new Random();
 
 			for(int i=0; i<iterations; ++i)
 			{
@@ -29,16 +51,54 @@ namespace ConsoleTest
 					for(int y=0; y<height; ++y)
 					{
 						var type = (ushort)random.Next(ushort.MaxValue);
-
+			
 						var territoryId = (ushort)random.Next(ushort.MaxValue);
-
-						var tile = new Tile((TileType)type, territoryId);
-
-						manager.SetTile(x, y, tile);
-
+			
+						var set = new Tile((TileType)type, territoryId);
+			
+						manager.SetTile(x, y, set);
+			
 						var get = manager.GetTile(x, y);
+			
+						if(set != get)
+						{
+							throw new Exception();
+						}
+					}
+				}
+			}
+		}
 
-						if(tile != get)
+		private static void Test2(MapManager manager, int width, int height, int iterations)
+		{
+			var random = new Random();
+
+			var hash = 0; // Чтобы компилятор не оптимизировал ненужное чтение
+
+			for(int i=0; i<iterations; ++i)
+			{
+				for(int x=0; x<width; ++x)
+				{
+					for(int y=0; y<height; ++y)
+					{
+						var type = (ushort)random.Next(ushort.MaxValue);
+						
+						var territoryId = (ushort)random.Next(ushort.MaxValue);
+						
+						var set = new Tile((TileType)type, territoryId);
+						
+						manager.SetTile(x, y, set);
+						
+						var get = manager.GetTile(x, y);
+						
+						for(int j=0; j<100; ++j)
+						{
+							// Иммитируем частое чтение
+
+							hash += manager.GetTile(random.Next(width), random.Next(height)).TerritoryId;
+						}
+
+						if(set != get)
 						{
 							throw new Exception();
 						}
@@ -46,12 +106,7 @@ namespace ConsoleTest
 				}
 			}
 
-			stopwatch.Stop();
-
-			var elapsed = stopwatch.Elapsed;
-
-			Console.WriteLine($"Elapsed {elapsed.TotalMilliseconds} ms");
-			Console.ReadKey();
+			Console.WriteLine(hash);
 		}
 	}
 }

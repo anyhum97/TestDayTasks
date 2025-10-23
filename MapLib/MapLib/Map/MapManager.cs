@@ -55,6 +55,9 @@ namespace MapLib
 			_tiles = tiles.ToArray();
 		}
 
+		/// <summary>
+		/// Позволяет потокобезопасно получить тайл по координатам.
+		/// </summary>
 		public Tile GetTile(int x, int y)
 		{
 			_locker.EnterReadLock();
@@ -71,6 +74,9 @@ namespace MapLib
 			}
 		}
 		
+		/// <summary>
+		/// Позволяет потокобезопасно установить тайл по координатам.
+		/// </summary>
 		public void SetTile(int x, int y, Tile tile)
 		{
 			_locker.EnterWriteLock();
@@ -87,13 +93,43 @@ namespace MapLib
 			}
 		}
 
-		private void ValidateBounds(int width, int height)
+		/// <summary>
+		/// Потокобезопасно заполняет прямоугольную область тайлами.
+		/// </summary>
+		/// <param name="startX">Начальная координата X (включительно)</param>
+		/// <param name="startY">Начальная координата Y (включительно)</param>
+		/// <param name="width">Ширина области</param>
+		/// <param name="height">Высота области</param>
+		/// <param name="tile">Тайл для заполнения</param>
+		public void FillArea(int startX, int startY, int width, int height, Tile tile)
+		{
+			_locker.EnterWriteLock();
+
+			try
+			{
+				for(int y=startY; y<startY+height; ++y)
+				{
+					for(int x=startX; x<startX+width; ++x)
+					{
+						var index = GetIndex(x, y);
+
+						_tiles[index] = tile;
+					}
+				}
+			}
+			finally
+			{
+				_locker.ExitWriteLock();
+			}
+		}
+
+		private static void ValidateBounds(int width, int height)
 		{
 			ArgumentOutOfRangeException.ThrowIfLessThan(width, 1, nameof(width));
 			ArgumentOutOfRangeException.ThrowIfLessThan(height, 1, nameof(height));
 		}
 
-		private void ValidateArray(Tile[] tiles, int width, int height)
+		private static void ValidateArray(Tile[] tiles, int width, int height)
 		{
 			ArgumentNullException.ThrowIfNull(tiles);
 
@@ -103,7 +139,7 @@ namespace MapLib
 
 			if(length != expected)
 			{
-				throw new ArgumentOutOfRangeException();
+				throw new ArgumentOutOfRangeException("Invalid array lenght");
 			}
 		}
 
@@ -117,7 +153,7 @@ namespace MapLib
 
 			if(count != expected)
 			{
-				throw new ArgumentOutOfRangeException();
+				throw new ArgumentOutOfRangeException("Invalid collection size");
 			}
 		}
 
