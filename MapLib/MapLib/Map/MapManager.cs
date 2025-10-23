@@ -30,17 +30,21 @@ namespace MapLib
 			
 			var random = new Random();
 			
-			// Инициализация тайлов случайными типами (TileType)
+			// Инициализация тайлов случайными значенифми
 			
 			Span<long> tilesSpan = _tiles;
 			
 			for(int i=0; i<_count; ++i)
 			{
-				var type = (TileType) random.Next(0, 2); // Plain или Mountain
-				tilesSpan[i] = TileEncoder.Encode(type, 0); // ID территории пока 0
+				var tileType = (TileType)random.Next(0, 2);
+
+				var territoryId = random.Next(territoryCount); 
+
+				tilesSpan[i] = TileEncoder.Encode(tileType, territoryId);
 			}
 			
 			// Создание словаря территорий
+
 			_territories.Clear();
 
 			for(int t=1; t<=territoryCount; ++t)
@@ -50,22 +54,6 @@ namespace MapLib
 					Id = t,
 					Name = $"Territory {t}",
 				};
-			}
-
-			// Распределение территорий по карте
-
-			int blockWidth = _width / territoryCount;
-			int blockHeight = _height / territoryCount;
-			
-			for(int y = 0; y < _height; y++)
-			{
-				for(int x = 0; x < _width; x++)
-				{
-					int territoryId = ((x / blockWidth) % territoryCount) + 1;
-					int index = GetIndex(x, y);
-					var type = tilesSpan[index].GetTileType();
-					tilesSpan[index] = TileEncoder.Encode(type, territoryId);
-				}
 			}
 		}
 		
