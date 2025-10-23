@@ -17,6 +17,7 @@ namespace MapLib.Map
 		private readonly Tile[] _tiles;
 
 		public int Height => _height;
+
 		public int Width => _width;
 
 		public MapManager(int width = _defaultWidth, int height = _defaultHeight)
@@ -95,6 +96,8 @@ namespace MapLib.Map
 		/// </summary>
 		public bool CanPlaceInArea(int startX, int startY, int width, int height)
 		{
+			// Оптимизация: считаем линейный индекс сразу
+
 			int rowEnd = startY + height;
 			int colEnd = startX + width;
 
@@ -151,6 +154,22 @@ namespace MapLib.Map
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private int GetIndex(int x, int y)
 		{
+			#if DEBUG
+			
+			// Проверяем диапазон значений только в DEBUG сборке.
+
+			if(x < 0 || x >= _width)
+			{
+				throw new IndexOutOfRangeException();
+			}
+
+			if(y < 0 || y >= _height)
+			{
+				throw new IndexOutOfRangeException();
+			}
+
+			#endif
+
 			return y * _width + x;
 		}
 	}

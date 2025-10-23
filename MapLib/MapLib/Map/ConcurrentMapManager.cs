@@ -207,6 +207,22 @@ namespace MapLib.Map
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private int GetIndex(int x, int y)
 		{
+			#if DEBUG
+			
+			// Проверяем диапазон значений только в DEBUG сборке.
+
+			if(x < 0 || x >= _width)
+			{
+				throw new IndexOutOfRangeException();
+			}
+
+			if(y < 0 || y >= _height)
+			{
+				throw new IndexOutOfRangeException();
+			}
+
+			#endif
+
 			return y * _width + x;
 		}
 	}
