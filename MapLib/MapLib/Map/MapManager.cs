@@ -16,6 +16,16 @@ namespace MapLib.Map
 
 		private readonly Tile[] _tiles;
 
+		#region [Objects]
+		/// <summary>
+		/// Объекты карты
+		/// </summary>
+		private readonly Dictionary<int, MapObject> _objects = [];
+
+		public IReadOnlyDictionary<int, MapObject> Objects => _objects;
+
+		#endregion
+
 		public int Height => _height;
 
 		public int Width => _width;
@@ -30,7 +40,7 @@ namespace MapLib.Map
 			_tiles = new Tile[_width * _height];
 		}
 
-		public MapManager(Tile[] tiles, int width, int height)
+		public MapManager(Tile[] tiles, int width, int height, Dictionary<int, MapObject> objects = null)
 		{
 			ValidateBounds(width, height);
 			ValidateArray(tiles, width, height);
@@ -39,9 +49,14 @@ namespace MapLib.Map
 			_height = height;
 
 			_tiles = tiles;
+
+			if(objects is not null)
+			{
+				_objects = objects;
+			}
 		}
 
-		public MapManager(IEnumerable<Tile> tiles, int width, int height)
+		public MapManager(IEnumerable<Tile> tiles, int width, int height, Dictionary<int, MapObject> objects = null)
 		{
 			ValidateBounds(width, height);
 			ValidateCollection(tiles, width, height);
@@ -50,6 +65,11 @@ namespace MapLib.Map
 			_height = height;
 
 			_tiles = tiles.ToArray();
+
+			if(objects is not null)
+			{
+				_objects = objects;
+			}
 		}
 
 		/// <summary>
@@ -77,6 +97,8 @@ namespace MapLib.Map
 		/// </summary>
 		public void FillArea(int startX, int startY, int width, int height, Tile tile)
 		{
+			// Оптимизация: считаем линейный индекс сразу
+
 			int rowEnd = startY + height;
 			int colEnd = startX + width;
 
@@ -115,6 +137,16 @@ namespace MapLib.Map
 			}
 
 			return true;
+		}
+
+		public bool TryGetMapObjectById(int id, out MapObject? mapObject)
+		{
+			return _objects.TryGetValue(id, out mapObject);
+		}
+
+		public bool TryRemoveMapObjectById(int id)
+		{
+			return _objects.Remove(id);
 		}
 
 		private static void ValidateBounds(int width, int height)

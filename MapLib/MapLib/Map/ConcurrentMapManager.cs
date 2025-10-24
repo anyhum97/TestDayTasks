@@ -8,6 +8,7 @@ namespace MapLib.Map
 	/// Потокобезопасный класс для работы с тайловой картой.
 	/// Оптимизирован для частого чтения и редких записей.
 	/// </summary>
+	[Obsolete("Не поддерживается")]
 	public class ConcurrentMapManager
 	{
 		private const int _defaultWidth = 1000;
