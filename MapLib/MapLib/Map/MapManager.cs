@@ -1,4 +1,5 @@
-﻿using MapLib.Map.Objects;
+﻿using MapLib.Interfaces;
+using MapLib.Map.Objects;
 using System.Runtime.CompilerServices;
 
 namespace MapLib.Map
@@ -11,17 +12,20 @@ namespace MapLib.Map
 		private const int _defaultWidth = 1000;
 		private const int _defaultHeight = 1000;
 
-		private readonly int _width = _defaultWidth;
-		private readonly int _height = _defaultHeight;
+		private int _width = _defaultWidth;
+		private int _height = _defaultHeight;
 
-		private readonly Tile[] _tiles;
+		private IRedisClient _redis;
+
+		private Tile[] _tiles;
 
 		#region [Objects]
+
+		private Dictionary<int, MapObject> _objects = [];
+
 		/// <summary>
 		/// Объекты карты
 		/// </summary>
-		private readonly Dictionary<int, MapObject> _objects = [];
-
 		public IReadOnlyDictionary<int, MapObject> Objects => _objects;
 
 		#endregion
@@ -30,25 +34,19 @@ namespace MapLib.Map
 
 		public int Width => _width;
 
-		public MapManager(int width = _defaultWidth, int height = _defaultHeight)
+		public MapManager(IRedisClient redis, int width = _defaultWidth, int height = _defaultHeight)
 		{
-			ValidateBounds(width, height);
-
-			_width = width;
-			_height = height;
+			ValidateAndSetBounds(width, height);
+			ValidateAndSetRedis(redis);
 
 			_tiles = new Tile[_width * _height];
 		}
 
-		public MapManager(Tile[] tiles, int width, int height, Dictionary<int, MapObject> objects = null)
+		public MapManager(IRedisClient redis, Tile[] tiles, int width, int height, Dictionary<int, MapObject> objects = null)
 		{
-			ValidateBounds(width, height);
-			ValidateArray(tiles, width, height);
-
-			_width = width;
-			_height = height;
-
-			_tiles = tiles;
+			ValidateAndSetBounds(width, height);
+			ValidateAndSetTilesArray(tiles, width, height);
+			ValidateAndSetRedis(redis);
 
 			if(objects is not null)
 			{
@@ -56,15 +54,11 @@ namespace MapLib.Map
 			}
 		}
 
-		public MapManager(IEnumerable<Tile> tiles, int width, int height, Dictionary<int, MapObject> objects = null)
+		public MapManager(IRedisClient redis, IEnumerable<Tile> tiles, int width, int height, Dictionary<int, MapObject> objects = null)
 		{
-			ValidateBounds(width, height);
-			ValidateCollection(tiles, width, height);
-
-			_width = width;
-			_height = height;
-
-			_tiles = tiles.ToArray();
+			ValidateAndSetBounds(width, height);
+			ValidateAndSetCollection(tiles, width, height);
+			ValidateAndSetRedis(redis);
 
 			if(objects is not null)
 			{
@@ -149,13 +143,16 @@ namespace MapLib.Map
 			return _objects.Remove(id);
 		}
 
-		private static void ValidateBounds(int width, int height)
+		private void ValidateAndSetBounds(int width, int height)
 		{
 			ArgumentOutOfRangeException.ThrowIfLessThan(width, 1, nameof(width));
 			ArgumentOutOfRangeException.ThrowIfLessThan(height, 1, nameof(height));
+
+			_width = width;
+			_height = height;
 		}
 
-		private static void ValidateArray(Tile[] tiles, int width, int height)
+		private void ValidateAndSetTilesArray(Tile[] tiles, int width, int height)
 		{
 			ArgumentNullException.ThrowIfNull(tiles);
 
@@ -167,9 +164,11 @@ namespace MapLib.Map
 			{
 				throw new ArgumentOutOfRangeException("Invalid array lenght");
 			}
+
+			_tiles = tiles;
 		}
 
-		private static void ValidateCollection(IEnumerable<Tile> tiles, int width, int height)
+		private void ValidateAndSetCollection(IEnumerable<Tile> tiles, int width, int height)
 		{
 			ArgumentNullException.ThrowIfNull(tiles);
 
@@ -181,6 +180,15 @@ namespace MapLib.Map
 			{
 				throw new ArgumentOutOfRangeException("Invalid collection size");
 			}
+
+			_tiles = tiles.ToArray();
+		}
+
+		private void ValidateAndSetRedis(IRedisClient redis)
+		{
+			ArgumentNullException.ThrowIfNull(redis);
+
+			_redis = redis;
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
