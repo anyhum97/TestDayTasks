@@ -1,7 +1,9 @@
-﻿using MapLib.Helpers;
+﻿using System.Runtime.CompilerServices;
+
+using MapLib.Helpers;
 using MapLib.Interfaces;
+using MapLib.Map.Enums;
 using MapLib.Map.Objects;
-using System.Runtime.CompilerServices;
 
 namespace MapLib.Map
 {
@@ -39,32 +41,72 @@ namespace MapLib.Map
 
 		#endregion
 
-		public MapManager(IRedisClient redis, int width = _defaultWidth, int height = _defaultHeight, int territoriesCount = _defaultTerritoriesCount)
+		public MapManager(IRedisClient redis, 
+			Dictionary<ushort, TerritoryInfo> territories = null, 
+			int width = _defaultWidth, 
+			int height = _defaultHeight, 
+			int territoriesCount = _defaultTerritoriesCount,
+			int? seed = null)
 		{
 			ValidateAndSetBounds(width, height);
 			ValidateAndSetRedis(redis);
 
-			GenerateTerritories(territoriesCount);
-
 			_tiles = new Tile[_width * _height];
+
+			if(territories == null)
+			{
+				GenerateTerritories(territoriesCount);
+			}
+			else
+			{
+				_territories = territories;
+			}
+
+			GenerateMap(seed);
 		}
 
-		public MapManager(IRedisClient redis, Tile[] tiles, int width, int height, int territoriesCount = _defaultTerritoriesCount)
+		public MapManager(IRedisClient redis, 
+			Tile[] tiles, 
+			int width, 
+			int height, 
+			Dictionary<ushort, TerritoryInfo> territories = null, 
+			int territoriesCount = _defaultTerritoriesCount,
+			int? seed = null)
 		{
 			ValidateAndSetBounds(width, height);
 			ValidateAndSetTilesArray(tiles, width, height);
 			ValidateAndSetRedis(redis);
 
-			GenerateTerritories(territoriesCount);
+			if(territories == null)
+			{
+				GenerateTerritories(territoriesCount);
+			}
+			else
+			{
+				_territories = territories;
+			}
 		}
 
-		public MapManager(IRedisClient redis, IEnumerable<Tile> tiles, int width, int height, int territoriesCount = _defaultTerritoriesCount)
+		public MapManager(IRedisClient redis, 
+			IEnumerable<Tile> tiles, 
+			int width, 
+			int height, 
+			Dictionary<ushort, TerritoryInfo> territories = null, 
+			int territoriesCount = _defaultTerritoriesCount,
+			int? seed = null)
 		{
 			ValidateAndSetBounds(width, height);
 			ValidateAndSetTilesCollection(tiles, width, height);
 			ValidateAndSetRedis(redis);
 
-			GenerateTerritories(territoriesCount);
+			if(territories == null)
+			{
+				GenerateTerritories(territoriesCount);
+			}
+			else
+			{
+				_territories = territories;
+			}
 		}
 
 		/// <summary>
@@ -338,6 +380,46 @@ namespace MapLib.Map
 				};
 
 				_territories.Add(id, TerritoryInfo);
+			}
+		}
+
+		/// <summary>
+		/// Генерация карты - заполнение тайлов.
+		/// </summary>
+		/// <param name="seed"></param>
+		private void GenerateMap(int? seed)
+		{
+			if(seed == null)
+			{
+				var gen = new Random();
+
+				seed = gen.Next();
+			}
+
+			var random = new Random(seed.Value);
+
+			var territoryIds = _territories.Keys.ToArray();
+
+			int territoryCount = territoryIds.Length;
+
+			var test = new int[territoryCount];
+
+			for(int y=0; y<_height; ++y)
+			{
+				int index = y * _width;
+
+				for(int x=0; x<_width; ++x, ++index)
+				{
+					// Случайный TileType
+					var tileType = (TileType)random.Next(0, 2);
+
+					// TerritoryId в зависимости от положения, чтобы все сгенерированные регионы были одинаковыми по площади
+					ushort territoryId = (ushort)((index / territoryCount) % territoryCount);
+
+					_tiles[index] = new Tile(tileType, territoryId);
+
+					++test[territoryId];
+				}
 			}
 		}
 
