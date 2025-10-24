@@ -1,117 +1,34 @@
-﻿using System.Diagnostics;
-
-using MapLib.Map;
-using MapLib.Map.Enums;
+﻿using MapLib.Helpers;
+using MapLib.Interfaces;
 using MapLib.Map.Objects;
-using MapLib.Helpers;
 
 namespace ConsoleTest
 {
 	public static class Program
 	{
-		private const int _defaultWidth = 1000;
-		private const int _defaultHeight = 1000;
-
-		private const int _defaultIterations = 10;
-
-		public delegate void BenchmarkWork(ConcurrentMapManager manager, int width, int height, int iterations);
-
 		public static void Main()
 		{
-			//Benchmark(Test1, 1000, 1000, 5);
+			var position1 = new Position(1, 1);
+			var position2 = new Position(20, 20);
 
-			var redis = new InMemoryRedisClient();
+			var geo1 = GeoConverter.ToGeo(position1, 1000, 1000);
+			var geo2 = GeoConverter.ToGeo(position2, 1000, 1000);
 
-			var manager = new MapManager(redis);
-		}
+			IRedisClient redis = new RedisGeoClient("localhost:6379");
 
-		private static void Benchmark(BenchmarkWork work, int width = _defaultWidth, int height = _defaultHeight, int iterations = _defaultIterations)
-		{
-			var manager = new ConcurrentMapManager(width, height);
+			redis.TryRemoveGeoPoint(1);
+			redis.TryRemoveGeoPoint(2);
 
-			var stopwatch = new Stopwatch();
+			var state1 = redis.TryAddGeoPoint(1, geo1);
+			var state2 = redis.TryAddGeoPoint(2, geo2);
 
-			work.Invoke(manager, width, height, iterations); // Прогреваем
+			var id1 = redis.FirstOrDefaultByGeoPoint(geo1);
+			var id2 = redis.FirstOrDefaultByGeoPoint(geo2);
 
-			stopwatch.Start();
+			var objects1 = redis.GetAllObjectsInArea(geo1, 1);
+			var objects2 = redis.GetAllObjectsInArea(geo2, 1000000); // Потому что реальные расстояния
 
-			work.Invoke(manager, width, height, iterations);
 
-			stopwatch.Stop();
-
-			var elapsed = stopwatch.Elapsed;
-
-			Console.WriteLine($"Elapsed {elapsed.TotalMilliseconds} ms");
-			Console.ReadKey();
-		}
-
-		private static void Test1(ConcurrentMapManager manager, int width, int height, int iterations)
-		{
-			var random = new Random();
-
-			for(int i=0; i<iterations; ++i)
-			{
-				for(int x=0; x<width; ++x)
-				{
-					for(int y=0; y<height; ++y)
-					{
-						var type = (ushort)random.Next(ushort.MaxValue);
-			
-						var territoryId = (ushort)random.Next(ushort.MaxValue);
-			
-						var set = new Tile((TileType)type, territoryId);
-			
-						manager.SetTile(x, y, set);
-			
-						var get = manager.GetTile(x, y);
-			
-						if(set != get)
-						{
-							throw new Exception();
-						}
-					}
-				}
-			}
-		}
-
-		private static void Test2(ConcurrentMapManager manager, int width, int height, int iterations)
-		{
-			var random = new Random();
-
-			var hash = 0; // Чтобы компилятор не оптимизировал ненужное чтение
-
-			for(int i=0; i<iterations; ++i)
-			{
-				for(int x=0; x<width; ++x)
-				{
-					for(int y=0; y<height; ++y)
-					{
-						var type = (ushort)random.Next(ushort.MaxValue);
-						
-						var territoryId = (ushort)random.Next(ushort.MaxValue);
-						
-						var set = new Tile((TileType)type, territoryId);
-						
-						manager.SetTile(x, y, set);
-						
-						var get = manager.GetTile(x, y);
-						
-						for(int j=0; j<100; ++j)
-						{
-							// Иммитируем частое чтение
-
-							hash += manager.GetTile(random.Next(width), random.Next(height)).TerritoryId;
-						}
-
-						if(set != get)
-						{
-							throw new Exception();
-						}
-					}
-				}
-			}
-
-			Console.WriteLine(hash);
 		}
 	}
 }

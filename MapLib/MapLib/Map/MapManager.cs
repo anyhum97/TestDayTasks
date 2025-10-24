@@ -256,22 +256,11 @@ namespace MapLib.Map
 		/// <summary>
 		/// Получить все объекты в указанной области.
 		/// </summary>
-		public List<MapObject> GetAllObjectsInArea(int x, int y, int width, int height)
+		public List<MapObject> GetAllObjectsInArea(int x, int y, int radius)
 		{
-			#if DEBUG
+			var point = GeoConverter.ToGeo(new Position(x, y), _width, _height);
 
-			if(width <= 0 && height <= 0)
-			{
-				throw new ArgumentOutOfRangeException();
-			}
-
-			#endif
-
-			var point1 = GeoConverter.ToGeo(new Position(x, y), _width, _height);
-
-			var point2 = GeoConverter.ToGeo(new Position(x + width, y + height), _width, _height);
-
-			var ids = _redis.GetAllObjectsInArea(point1, point2);
+			var ids = _redis.GetAllObjectsInArea(point, radius);
 
 			var result = new List<MapObject>(ids.Count);
 

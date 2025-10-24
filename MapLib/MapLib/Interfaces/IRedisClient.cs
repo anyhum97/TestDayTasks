@@ -11,8 +11,8 @@ namespace MapLib.Interfaces
 
 		public bool TryRemoveGeoPoint(int key);
 
-		public int? FirstOrDefaultByGeoPoint(GeoPoint point);
+		public int? FirstOrDefaultByGeoPoint(GeoPoint point, double radius = 0.001);
 
-		public IList<int> GetAllObjectsInArea(GeoPoint point1, GeoPoint point2);
+		public IList<int>? GetAllObjectsInArea(GeoPoint point, double radius);
 	}
 }
