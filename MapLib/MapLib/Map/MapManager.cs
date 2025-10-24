@@ -188,9 +188,48 @@ namespace MapLib.Map
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool IntersectsArea(int id, int x, int y, int width, int height)
 		{
+			#if DEBUG
+
+			if(width <= 0 && height <= 0)
+			{
+				throw new ArgumentOutOfRangeException();
+			}
+
+			#endif
+
 			var mapObject = _objects[id];
 
 			return mapObject.Intersects(x, y, width, height);
+		}
+
+		public List<MapObject> GetAllObjectsInArea(int x, int y, int width, int height)
+		{
+			#if DEBUG
+
+			if(width <= 0 && height <= 0)
+			{
+				throw new ArgumentOutOfRangeException();
+			}
+
+			#endif
+
+			var point1 = GeoConverter.ToGeo(new Position(x, y), _width, _height);
+
+			var point2 = GeoConverter.ToGeo(new Position(x + width, y + height), _width, _height);
+
+			var ids = _redis.GetAllObjectsInArea(point1, point2);
+
+			var result = new List<MapObject>(ids.Count);
+
+			foreach(var id in ids)
+			{
+				if(_objects.TryGetValue(id, out var obj))
+				{
+					result.Add(obj);
+				}
+			}
+
+			return result;
 		}
 
 		private void ValidateAndSetBounds(int width, int height)

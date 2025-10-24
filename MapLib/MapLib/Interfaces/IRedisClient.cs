@@ -13,14 +13,6 @@ namespace MapLib.Interfaces
 
 		public int? FirstOrDefaultByGeoPoint(GeoPoint point);
 
-		public IList<MapObject> GetObjectsByGeoPoint(GeoPoint point);
-
-		//Task<IEnumerable<string>> GeoRadiusAsync(string key, double longitude, double latitude, double radius);
-		//
-		//Task RemoveAsync(string key, string member);
-		//
-		//Task<MapObject?> GetObjectAsync(string id);
-		//
-		//Task SetObjectAsync(MapObject obj);
+		public IList<int> GetAllObjectsInArea(GeoPoint point1, GeoPoint point2);
 	}
 }
