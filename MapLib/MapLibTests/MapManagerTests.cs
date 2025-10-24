@@ -16,7 +16,8 @@ namespace MapLib.Tests
 		public void Setup()
 		{
 			_redis = new InMemoryRedisClient();
-			_mapManager = new MapManager(_redis, 100, 100); // компактная карта для тестов
+
+			_mapManager = new MapManager(_redis, width: 100, height: 100, territoriesCount: 100);
 		}
 
 		[Test]
@@ -222,15 +223,6 @@ namespace MapLib.Tests
 
 			Assert.AreEqual(t1, _mapManager.GetTile(0, 0));
 			Assert.AreEqual(t2, _mapManager.GetTile(1, 1));
-
-			// остальные тайлы должны быть дефолтными
-			for (int y = 0; y < _mapManager.Height; y++)
-				for (int x = 0; x < _mapManager.Width; x++)
-				{
-					if ((x == 0 && y == 0) || (x == 1 && y == 1)) continue;
-					var tile = _mapManager.GetTile(x, y);
-					Assert.AreEqual(default(Tile), tile);
-				}
 		}
 
 		[Test]
@@ -257,6 +249,92 @@ namespace MapLib.Tests
 
 			_mapManager.SetTile(1, 1, mountain);
 			Assert.IsFalse(_mapManager.CanPlaceInArea(0, 0, 2, 2));
+		}
+
+		[Test]
+		public void TryGetTerritoryInfoById_ShouldReturnCorrectTerritory()
+		{
+			ushort id = 1;
+			Assert.IsTrue(_mapManager.TryGetTerritoryInfoById(id, out var territory));
+			Assert.IsNotNull(territory);
+			Assert.AreEqual(id, territory!.Id);
+			Assert.AreEqual($"Territory {id}", territory.Name);
+		}
+		
+		[Test]
+		public void IsTileInTerritory_ShouldReturnTrueIfTileBelongs()
+		{
+			var territoryId = _mapManager.GetAllTerritoriesInArea(0, 0, 1, 1).First().Id;
+			var tileX = 0;
+			var tileY = 0;
+		
+			var territoryInfo = _mapManager.TryGetTerritoryInfoById(territoryId, out var info) ? info! : null;
+			Assert.IsNotNull(territoryInfo);
+			Assert.IsTrue(_mapManager.IsTileInTerritory(tileX, tileY, territoryInfo));
+		}
+		
+		[Test]
+		public void GetAllTerritoriesInArea_ShouldReturnCorrectTerritories()
+		{
+			// Выбираем область в верхнем левом углу карты
+			int startX = 0, startY = 0, width = 10, height = 10;
+			var territories = _mapManager.GetAllTerritoriesInArea(startX, startY, width, height);
+		
+			Assert.IsNotEmpty(territories);
+		
+			// Проверяем, что каждый TerritoryInfo реально существует на тайлах
+			foreach(var territory in territories)
+			{
+				bool hasTile = false;
+				for(int y=startY; y<startY+height; y++)
+				{
+					for(int x=startX; x<startX+width; x++)
+					{
+						if(_mapManager.IsTileInTerritory(x, y, territory))
+						{
+							hasTile = true;
+							break;
+						}
+					}
+					if(hasTile) break;
+				}
+				Assert.IsTrue(hasTile, $"Territory {territory.Id} has no tiles in the area");
+			}
+		}
+		
+		[Test]
+		public void GenerateMap_AllTilesHaveValidTerritoryId()
+		{
+			// Все тайлы должны принадлежать какому-либо региону (TerritoryId != 0)
+			for(int y=0; y<_mapManager.Height; y++)
+			{
+				for(int x=0; x<_mapManager.Width; x++)
+				{
+					var tile = _mapManager.GetTile(x, y);
+					Assert.IsTrue(tile.TerritoryId != 0, $"Tile at ({x},{y}) has TerritoryId=0");
+				}
+			}
+		}
+		
+		[Test]
+		public void GenerateMap_RegionsApproximatelyEqualArea()
+		{
+			var countPerRegion = new Dictionary<ushort,int>();
+			for(int y=0; y<_mapManager.Height; y++)
+			{
+				for(int x=0; x<_mapManager.Width; x++)
+				{
+					var tid = _mapManager.GetTile(x, y).TerritoryId;
+					if(!countPerRegion.ContainsKey(tid)) countPerRegion[tid] = 0;
+					countPerRegion[tid]++;
+				}
+			}
+			
+			var min = countPerRegion.Values.Min();
+			var max = countPerRegion.Values.Max();
+			
+			// Разница в 1-2 тайла допустима
+			Assert.LessOrEqual(max - min, 2);
 		}
 	}
 }

@@ -402,8 +402,6 @@ namespace MapLib.Map
 
 			int territoryCount = territoryIds.Length;
 
-			var test = new int[territoryCount];
-
 			for(int y=0; y<_height; ++y)
 			{
 				int index = y * _width;
@@ -414,11 +412,9 @@ namespace MapLib.Map
 					var tileType = (TileType)random.Next(0, 2);
 
 					// TerritoryId в зависимости от положения, чтобы все сгенерированные регионы были одинаковыми по площади
-					ushort territoryId = (ushort)((index / territoryCount) % territoryCount);
+					ushort territoryId = (ushort)((index / territoryCount) % territoryCount + 1);
 
 					_tiles[index] = new Tile(tileType, territoryId);
-
-					++test[territoryId];
 				}
 			}
 		}
