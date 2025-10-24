@@ -5,8 +5,9 @@ using MapLib.Map.Objects;
 
 public class RedisGeoClient : IRedisClient
 {
+	private const string _geoKey = "map_objects";
+
 	private readonly IDatabase _db;
-	private readonly string _geoKey = "map_objects";
 
 	public RedisGeoClient(string connectionString)
 	{

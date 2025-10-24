@@ -8,7 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MagicOnion.Server" Version="7.0.6" />
     <PackageReference Include="StackExchange.Redis" Version="2.9.32" />
+    <PackageReference Include="MemoryPack" Version="1.21.4" />
   </ItemGroup>
 
   <ItemGroup>
