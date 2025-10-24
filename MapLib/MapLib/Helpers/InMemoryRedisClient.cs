@@ -3,7 +3,6 @@
 using MapLib.Interfaces;
 using MapLib.Map.Objects;
 
-/*
 namespace MapLib.Helpers
 {
 	/// <summary>
@@ -11,114 +10,54 @@ namespace MapLib.Helpers
 	/// </summary>
 	public class InMemoryRedisClient : IRedisClient
 	{
-		private readonly ConcurrentDictionary<string, MapObject> _objects = new();
+		private readonly ConcurrentDictionary<int, GeoPoint> _points = new();
 
-		// GEO индекс: ключ -> List<GeoEntry>
-		private readonly ConcurrentDictionary<string, List<GeoEntry>> _geoIndexes = new();
-
-		public struct GeoEntry
+		public bool TryAddGeoPoint(int key, GeoPoint point)
 		{
-			public string Member;
-			public double Longitude;
-			public double Latitude;
-
-			public GeoEntry(string member, double longitude, double latitude)
-			{
-				Member = member;
-				Longitude = longitude;
-				Latitude = latitude;
-			}
+			return _points.TryAdd(key, point);
 		}
 
-		public Task GeoAddAsync(string key, double longitude, double latitude, string member)
+		public bool TryRemoveGeoPoint(int key)
 		{
-			var list = _geoIndexes.GetOrAdd(key, _ => new List<GeoEntry>());
+			return _points.TryRemove(key, out _);
+		}
 
-			lock(list)
+		public int? FirstOrDefaultByGeoPoint(GeoPoint point)
+		{
+			// Простая проверка точного совпадения (или можно заменить на поиск ближайшей точки)
+
+			foreach(var kvp in _points)
 			{
-				int index = -1;
-				for(int i = 0; i < list.Count; i++)
+				if(kvp.Value.Equals(point))
 				{
-					if(list[i].Member == member)
-					{
-						index = i;
-						break;
-					}
-				}
-
-				if(index >= 0)
-				{
-					list[index] = new GeoEntry(member, longitude, latitude);
-				}
-				else
-				{
-					list.Add(new GeoEntry(member, longitude, latitude));
+					return kvp.Key;
 				}
 			}
 
-			return Task.CompletedTask;
+			return null;
 		}
 
-		public Task<IEnumerable<string>> GeoRadiusAsync(string key, double longitude, double latitude, double radius)
+		public IList<int> GetAllObjectsInArea(GeoPoint point1, GeoPoint point2)
 		{
-			if(!_geoIndexes.TryGetValue(key, out var list))
-			{
-				return Task.FromResult((IEnumerable<string>)new List<string>());
-			}
+			// Определяем границы области
+			float minLat = Math.Min(point1.Latitude, point2.Latitude);
+			float maxLat = Math.Max(point1.Latitude, point2.Latitude);
+			float minLon = Math.Min(point1.Longitude, point2.Longitude);
+			float maxLon = Math.Max(point1.Longitude, point2.Longitude);
 
-			List<string> result = new List<string>();
+			var result = new List<int>();
 
-			lock(list)
+			foreach(var kvp in _points)
 			{
-				for(int i = 0; i < list.Count; i++)
+				var p = kvp.Value;
+
+				if(p.Latitude >= minLat && p.Latitude <= maxLat && p.Longitude >= minLon && p.Longitude <= maxLon)
 				{
-					var entry = list[i];
-					double dx = entry.Longitude - longitude;
-					double dy = entry.Latitude - latitude;
-					if(Math.Sqrt(dx * dx + dy * dy) <= radius)
-					{
-						result.Add(entry.Member);
-					}
+					result.Add(kvp.Key);
 				}
 			}
 
-			return Task.FromResult((IEnumerable<string>)result);
-		}
-
-		public Task RemoveAsync(string key, string member)
-		{
-			if(_geoIndexes.TryGetValue(key, out var list))
-			{
-				lock(list)
-				{
-					for(int i = list.Count - 1; i >= 0; i--)
-					{
-						if(list[i].Member == member)
-						{
-							list.RemoveAt(i);
-						}
-					}
-				}
-			}
-
-			_objects.TryRemove(member, out _);
-
-			return Task.CompletedTask;
-		}
-
-		public Task<MapObject?> GetObjectAsync(string id)
-		{
-			_objects.TryGetValue(id, out var obj);
-
-			return Task.FromResult<MapObject?>(obj);
-		}
-
-		public Task SetObjectAsync(MapObject obj)
-		{
-			_objects[obj.Id] = obj;
-
-			return Task.CompletedTask;
+			return result;
 		}
 	}
 }
-*/

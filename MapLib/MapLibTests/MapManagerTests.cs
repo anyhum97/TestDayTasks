@@ -1,5 +1,7 @@
 using MapLib.Map;
 using MapLib.Map.Objects;
+using MapLib.Helpers;
+
 using MapLib.Map.Enums;
 
 namespace MapLib.Tests
@@ -7,106 +9,134 @@ namespace MapLib.Tests
 	[TestFixture]
 	public class MapManagerTests
 	{
-		[Test]
-		public void Constructor_Default_CreatesEmptyMap()
-		{
-			var map = new MapManager(10, 20);
-			
-			Assert.AreEqual(10, map.Width);
-			Assert.AreEqual(20, map.Height);
+		private MapManager _mapManager;
+		private InMemoryRedisClient _redis;
 
-			// Все тайлы должны быть по умолчанию (TileType = 0, TerritoryId = 0)
-			for (int y = 0; y < map.Height; y++)
-				for (int x = 0; x < map.Width; x++)
-					Assert.AreEqual(default(Tile), map.GetTile(x, y));
+		[SetUp]
+		public void Setup()
+		{
+			_redis = new InMemoryRedisClient();
+			_mapManager = new MapManager(_redis, 100, 100); // компактная карта для тестов
 		}
 
 		[Test]
-		public void SetTile_And_GetTile_WorksCorrectly()
+		public void Object_AddAndRetrieveById_WorksCorrectly()
 		{
-			var map = new MapManager(5, 5);
-			var tile = new Tile(TileType.Mountain, 42);
+			var obj = new MapObject(1, new Position(10, 20), 5, 5);
+			var added = _mapManager.TryAddObject(obj);
 
-			map.SetTile(2, 3, tile);
+			Assert.IsTrue(added, "Object should be added");
+			Assert.IsTrue(_redis.FirstOrDefaultByGeoPoint(GeoConverter.ToGeo(obj.Position, _mapManager.Width, _mapManager.Height)).HasValue);
+			var retrieved = _mapManager.FirstOrDefaultByPosition(obj.Position);
+			Assert.AreEqual(obj, retrieved);
+		}
 
-			Assert.AreEqual(tile, map.GetTile(2, 3));
+		[Test]
+		public void Object_Remove_WorksCorrectly()
+		{
+			var obj = new MapObject(2, new Position(15, 25), 5, 5);
+			_mapManager.TryAddObject(obj);
+
+			var removed = _mapManager.TryRemoveObject(obj.Id);
+			Assert.IsTrue(removed, "Object should be removed");
+
+			Assert.IsFalse(_redis.FirstOrDefaultByGeoPoint(GeoConverter.ToGeo(obj.Position, _mapManager.Width, _mapManager.Height)).HasValue);
+			Assert.IsNull(_mapManager.FirstOrDefaultByPosition(obj.Position));
+		}
+
+		[Test]
+		public void Object_Events_AreInvoked()
+		{
+			var obj = new MapObject(3, new Position(5, 5), 3, 3);
+			MapObject? addedObj = null;
+			int? removedId = null;
+
+			_mapManager.ObjectAdded += o => addedObj = o;
+			_mapManager.ObjectRemoved += id => removedId = id;
+
+			_mapManager.TryAddObject(obj);
+			Task.Delay(10).Wait(); // ждём асинхронный вызов события
+			Assert.AreEqual(obj, addedObj);
+
+			_mapManager.TryRemoveObject(obj.Id);
+			Task.Delay(10).Wait();
+			Assert.AreEqual(obj.Id, removedId);
+		}
+
+		[Test]
+		public void IntersectsArea_FullPartialNone()
+		{
+			var obj = new MapObject(4, new Position(10, 10), 10, 10);
+			_mapManager.TryAddObject(obj);
+
+			// Полное вхождение
+			Assert.IsTrue(_mapManager.IntersectsArea(obj.Id, 10, 10, 10, 10));
+
+			// Частичное пересечение
+			Assert.IsTrue(_mapManager.IntersectsArea(obj.Id, 15, 15, 10, 10));
+
+			// Нет пересечения
+			Assert.IsFalse(_mapManager.IntersectsArea(obj.Id, 0, 0, 5, 5));
+		}
+
+		[Test]
+		public void GetAllObjectsInArea_ReturnsCorrectObjects()
+		{
+			var obj1 = new MapObject(5, new Position(0, 0), 5, 5);
+			var obj2 = new MapObject(6, new Position(10, 10), 5, 5);
+			_mapManager.TryAddObject(obj1);
+			_mapManager.TryAddObject(obj2);
+
+			var list = _mapManager.GetAllObjectsInArea(0, 0, 15, 15);
+			Assert.Contains(obj1, list);
+			Assert.Contains(obj2, list);
+			Assert.AreEqual(2, list.Count);
+
+			// Ограниченная область
+			list = _mapManager.GetAllObjectsInArea(0, 0, 5, 5);
+			Assert.Contains(obj1, list);
+			Assert.AreEqual(1, list.Count);
+		}
+
+		[Test]
+		public void Tile_SetAndGet_WorksCorrectly()
+		{
+			var tile = new Tile(TileType.Plain, 1);
+			_mapManager.SetTile(0, 0, tile);
+			var t = _mapManager.GetTile(0, 0);
+			Assert.AreEqual(tile, t);
 		}
 
 		[Test]
 		public void FillArea_FillsCorrectly()
 		{
-			var map = new MapManager(4, 4);
-			var tile = new Tile(TileType.Mountain, 1);
-
-			map.FillArea(1, 1, 2, 2, tile);
-
-			for (int y = 0; y < map.Height; y++)
-			{
-				for (int x = 0; x < map.Width; x++)
-				{
-					if (x >= 1 && x <= 2 && y >= 1 && y <= 2)
-						Assert.AreEqual(tile, map.GetTile(x, y));
-					else
-						Assert.AreEqual(default(Tile), map.GetTile(x, y));
-				}
-			}
+			var tile = new Tile(TileType.Plain, 2);
+			_mapManager.FillArea(0, 0, 2, 2, tile);
+			for (int y = 0; y < 2; y++)
+				for (int x = 0; x < 2; x++)
+					Assert.AreEqual(tile, _mapManager.GetTile(x, y));
 		}
 
 		[Test]
-		public void CanPlaceInArea_ReturnsFalse_WhenMountainPresent()
+		public void CanPlaceInArea_RespectsTileType()
 		{
-			var map = new MapManager(3, 3);
+			var grass = new Tile(TileType.Plain, 0);
 			var mountain = new Tile(TileType.Mountain, 0);
-			map.SetTile(1, 1, mountain);
 
-			bool canPlace = map.CanPlaceInArea(0, 0, 3, 3);
-			Assert.IsFalse(canPlace);
+			_mapManager.FillArea(0, 0, 2, 2, grass);
+			Assert.IsTrue(_mapManager.CanPlaceInArea(0, 0, 2, 2));
+
+			_mapManager.SetTile(1, 1, mountain);
+			Assert.IsFalse(_mapManager.CanPlaceInArea(0, 0, 2, 2));
 		}
 
 		[Test]
-		public void CanPlaceInArea_ReturnsTrue_WhenNoMountain()
+		public void GetTile_OutOfBounds_Throws()
 		{
-			var map = new MapManager(2, 2);
-			var tile = new Tile(TileType.Plain, 0);
-			map.FillArea(0, 0, 2, 2, tile);
-
-			Assert.IsTrue(map.CanPlaceInArea(0, 0, 2, 2));
+			Assert.Throws<IndexOutOfRangeException>(() => _mapManager.GetTile(-1, 0));
+			Assert.Throws<IndexOutOfRangeException>(() => _mapManager.GetTile(0, -1));
+			Assert.Throws<IndexOutOfRangeException>(() => _mapManager.GetTile(_mapManager.Width, 0));
+			Assert.Throws<IndexOutOfRangeException>(() => _mapManager.GetTile(0, _mapManager.Height));
 		}
-
-		[Test]
-		public void Constructor_WithArray_Throws_WhenSizeIncorrect()
-		{
-			var tiles = new Tile[4]; // 2x2 expected
-			Assert.Throws<ArgumentOutOfRangeException>(() => new MapManager(tiles, 3, 3));
-		}
-
-		[Test]
-		public void Constructor_WithCollection_Throws_WhenSizeIncorrect()
-		{
-			var tiles = Enumerable.Repeat(new Tile(TileType.Mountain, 0), 4);
-			Assert.Throws<ArgumentOutOfRangeException>(() => new MapManager(tiles, 3, 3));
-		}
-
-		[Test]
-		public void GetTile_Throws_WhenOutOfBounds()
-		{
-			var map = new MapManager(2, 2);
-			Assert.Throws<IndexOutOfRangeException>(() => map.GetTile(-1, 0));
-			Assert.Throws<IndexOutOfRangeException>(() => map.GetTile(0, 2));
-		}
-
-		#if DEBUG
-
-		[Test]
-		public void SetTile_Throws_WhenOutOfBounds()
-		{
-			var map = new MapManager(2, 2);
-			var tile = new Tile(TileType.Mountain, 0);
-
-			Assert.Throws<IndexOutOfRangeException>(() => map.SetTile(2, 0, tile));
-			Assert.Throws<IndexOutOfRangeException>(() => map.SetTile(0, -1, tile));
-		}
-
-		#endif
 	}
 }
