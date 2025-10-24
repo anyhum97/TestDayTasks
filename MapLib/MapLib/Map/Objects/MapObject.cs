@@ -6,19 +6,16 @@ namespace MapLib.Map.Objects
 	{
 		public int Id { get; init; }
 
-		public float X { get; init; }
-
-		public float Y { get; init; }
+		public Position Position { get; init; }
 
 		public float Width { get; init; }
 
 		public float Height { get; init; }
 		
-		public MapObject(int id, float x, float y, float width, float height)
+		public MapObject(int id, Position position, float width, float height)
 		{
 			Id = id;
-			X = x;
-			Y = y;
+			Position = position;
 			Width = width;
 			Height = height;
 		}
@@ -29,12 +26,12 @@ namespace MapLib.Map.Objects
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Contains(int px, int py)
 		{
-			if(px < X || px > X + Width)
+			if(px < Position.X || px > Position.X + Width)
 			{
 				return false;
 			}
 			
-			if(py < Y || py > Y + Height)
+			if(py < Position.Y || py > Position.Y + Height)
 			{
 				return false;
 			}
@@ -48,12 +45,12 @@ namespace MapLib.Map.Objects
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersects(int x, int y, int w, int h)
 		{
-			if(X >= x + w || X + Width <= x)
+			if(Position.X >= x + w || Position.X + Width <= x)
 			{
 				return false;
 			}
 			
-			if(Y >= y + h || Y + Height <= y)
+			if(Position.Y >= y + h || Position.Y + Height <= y)
 			{
 				return false;
 			}

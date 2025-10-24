@@ -3,6 +3,7 @@
 using MapLib.Interfaces;
 using MapLib.Map.Objects;
 
+/*
 namespace MapLib.Helpers
 {
 	/// <summary>
@@ -120,3 +121,4 @@ namespace MapLib.Helpers
 		}
 	}
 }
+*/

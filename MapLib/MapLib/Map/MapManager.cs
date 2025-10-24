@@ -1,4 +1,5 @@
-﻿using MapLib.Interfaces;
+﻿using MapLib.Helpers;
+using MapLib.Interfaces;
 using MapLib.Map.Objects;
 using System.Runtime.CompilerServices;
 
@@ -15,24 +16,25 @@ namespace MapLib.Map
 		private int _width = _defaultWidth;
 		private int _height = _defaultHeight;
 
+		private readonly Dictionary<int, MapObject> _objects = [];
+
 		private IRedisClient _redis;
 
 		private Tile[] _tiles;
 
-		#region [Objects]
-
-		private Dictionary<int, MapObject> _objects = [];
-
-		/// <summary>
-		/// Объекты карты
-		/// </summary>
-		public IReadOnlyDictionary<int, MapObject> Objects => _objects;
-
-		#endregion
-
 		public int Height => _height;
 
 		public int Width => _width;
+
+		#region [События]
+
+		public event Action<MapObject>? ObjectAdded;
+
+		public event Action<int>? ObjectRemoved;
+
+		public event Action<MapObject>? ObjectUpdated;
+
+		#endregion
 
 		public MapManager(IRedisClient redis, int width = _defaultWidth, int height = _defaultHeight)
 		{
@@ -42,28 +44,18 @@ namespace MapLib.Map
 			_tiles = new Tile[_width * _height];
 		}
 
-		public MapManager(IRedisClient redis, Tile[] tiles, int width, int height, Dictionary<int, MapObject> objects = null)
+		public MapManager(IRedisClient redis, Tile[] tiles, int width, int height)
 		{
 			ValidateAndSetBounds(width, height);
 			ValidateAndSetTilesArray(tiles, width, height);
 			ValidateAndSetRedis(redis);
-
-			if(objects is not null)
-			{
-				_objects = objects;
-			}
 		}
 
-		public MapManager(IRedisClient redis, IEnumerable<Tile> tiles, int width, int height, Dictionary<int, MapObject> objects = null)
+		public MapManager(IRedisClient redis, IEnumerable<Tile> tiles, int width, int height)
 		{
 			ValidateAndSetBounds(width, height);
-			ValidateAndSetCollection(tiles, width, height);
+			ValidateAndSetTilesCollection(tiles, width, height);
 			ValidateAndSetRedis(redis);
-
-			if(objects is not null)
-			{
-				_objects = objects;
-			}
 		}
 
 		/// <summary>
@@ -133,14 +125,72 @@ namespace MapLib.Map
 			return true;
 		}
 
-		public bool TryGetMapObjectById(int id, out MapObject? mapObject)
+		/// <summary>
+		/// Добавление объекта.
+		/// </summary>
+		public bool TryAddObject(MapObject mapObject)
 		{
-			return _objects.TryGetValue(id, out mapObject);
+			var id = mapObject.Id;
+
+			var point = GeoConverter.ToGeo(mapObject.Position, _width, _height);
+			
+			// ToDo - продумать, что делать, если не удалось добавить в Redis
+			_redis.TryAddGeoPoint(id, point); 
+
+			if(_objects.TryAdd(id, mapObject))
+			{
+				Task.Run(() => ObjectAdded?.Invoke(mapObject));
+
+				return true;
+			}
+
+			return false;
 		}
 
-		public bool TryRemoveMapObjectById(int id)
+		/// <summary>
+		/// Добавление объекта.
+		/// </summary>
+		public bool TryRemoveObject(int id)
 		{
-			return _objects.Remove(id);
+			// ToDo - продумать, что делать, если не удалось удалить из Redis
+			_redis.TryRemoveGeoPoint(id);
+
+			if(_objects.Remove(id))
+			{
+				Task.Run(() => ObjectRemoved?.Invoke(id));
+
+				return true;
+			}
+
+			return false;
+		}
+
+		public MapObject? FirstOrDefaultByPosition(Position position)
+		{
+			var point = GeoConverter.ToGeo(position, _width, _height);
+
+			var id = _redis.FirstOrDefaultByGeoPoint(point);
+
+			if(id.HasValue)
+			{
+				if(_objects.TryGetValue(id.Value, out var mapObject))
+				{
+					return mapObject;
+				}
+			}
+
+			return null;
+		}
+
+		/// <summary>
+		/// Проверяет вхождение объекта в указанную область.
+		/// </summary>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public bool IntersectsArea(int id, int x, int y, int width, int height)
+		{
+			var mapObject = _objects[id];
+
+			return mapObject.Intersects(x, y, width, height);
 		}
 
 		private void ValidateAndSetBounds(int width, int height)
@@ -168,7 +218,7 @@ namespace MapLib.Map
 			_tiles = tiles;
 		}
 
-		private void ValidateAndSetCollection(IEnumerable<Tile> tiles, int width, int height)
+		private void ValidateAndSetTilesCollection(IEnumerable<Tile> tiles, int width, int height)
 		{
 			ArgumentNullException.ThrowIfNull(tiles);
 

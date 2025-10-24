@@ -4,21 +4,29 @@ namespace MapLib.Helpers
 {
 	public static class GeoConverter
 	{
-		// Например, каждая карта 1000x1000 тайлов -> координаты 0..1000
-		// Преобразуем в широту и долготу (допустим, 0..90 широта, 0..180 долгота)
-		public static GeoPoint ToGeo(int x, int y, int mapWidth, int mapHeight)
+		/// <summary>
+		/// Преобразовывает позицию на карте в гео-координаты.
+		/// </summary>
+		public static GeoPoint ToGeo(Position position, int mapWidth, int mapHeight)
 		{
-			double lat = ((double)y / mapHeight) * 90.0;       // Y -> широта
-			double lon = ((double)x / mapWidth) * 180.0;       // X -> долгота
+			// Например, каждая карта 1000x1000 тайлов -> координаты 0..1000
+			// Преобразуем в широту и долготу (допустим, 0..90 широта, 0..180 долгота)
+
+			float latitude = (position.Y / mapHeight) * 90.0f;	// Y -> широта
+			float longitude = (position.X / mapWidth) * 180.0f;	// X -> долгота
 			
-			return new GeoPoint(lat, lon);
+			return new GeoPoint(latitude, longitude);
 		}
 
-		public static (int X, int Y) FromGeo(double lat, double lon, int mapWidth, int mapHeight)
+		/// <summary>
+		/// Преобразовывает гео-координаты в позицию на карте.
+		/// </summary>
+		public static Position FromGeo(GeoPoint point, int mapWidth, int mapHeight)
 		{
-			int x = (int)((lon / 180.0) * mapWidth);
-			int y = (int)((lat / 90.0) * mapHeight);
-			return (x, y);
+			int x = (int)((point.Longitude / 180.0) * mapWidth);
+			int y = (int)((point.Latitude / 90.0) * mapHeight);
+
+			return new Position(x, y);
 		}
 	}
 }
