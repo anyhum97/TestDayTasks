@@ -1,9 +1,11 @@
-﻿using System.Runtime.InteropServices;
+﻿using MemoryPack;
+using System.Runtime.InteropServices;
 
 namespace MapLib.Map.Objects
 {
+	[MemoryPackable]
 	[StructLayout(LayoutKind.Explicit)]
-	public readonly struct Position(float x, float y)
+	public readonly partial struct Position(float x, float y)
 	{
 		[FieldOffset(0)]
 		public readonly float X = x;

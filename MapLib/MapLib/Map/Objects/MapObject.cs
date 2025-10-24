@@ -1,8 +1,10 @@
-﻿using System.Runtime.CompilerServices;
+﻿using MemoryPack;
+using System.Runtime.CompilerServices;
 
 namespace MapLib.Map.Objects
 {
-	public record class MapObject
+	[MemoryPackable]
+	public partial record class MapObject
 	{
 		public int Id { get; init; }
 

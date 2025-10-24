@@ -1,9 +1,12 @@
-﻿using MagicOnion.Server;
+﻿using System.Threading.Channels;
+using System.Runtime.CompilerServices;
+
 using MagicOnion;
+using MagicOnion.Server;
+
+using MapLib.Map;
 using MapLib.Interfaces;
 using MapLib.Map.Objects;
-using MapLib.Map;
-using System.Runtime.CompilerServices;
 
 public class MapService : ServiceBase<IMapService>, IMapService
 {
@@ -14,18 +17,32 @@ public class MapService : ServiceBase<IMapService>, IMapService
 		_mapManager = mapManager;
 	}
 	
-	public async UnaryResult<MapObjectsResponse> GetObjectsInArea(int x, int y, int radius)
+	public async UnaryResult<GetObjectsInAreaResponse> GetObjectsInArea(GetObjectsInAreaRequest request)
 	{
-		var objects = _mapManager.GetAllObjectsInArea(x, y, radius);
-
-		return new MapObjectsResponse(objects.ToArray());
+		int width = request.X2 - request.X1 + 1;
+		int height = request.Y2 - request.Y1 + 1;
+		var objects = new List<MapObject>();
+		
+		for(int y = request.Y1; y <= request.Y2; y++)
+		{
+			for(int x = request.X1; x <= request.X2; x++)
+			{
+			    var tileObjects = _mapManager.GetAllObjectsInArea(x, y, 0); // radius=0 для конкретного тайла
+			    objects.AddRange(tileObjects);
+			}
+		}
+		
+		return new GetObjectsInAreaResponse(objects.ToArray());
 	}
 	
-	public async UnaryResult<TerritoriesResponse> GetTerritoriesInArea(int x, int y, int width, int height)
+	public async UnaryResult<GetRegionsInAreaResponse> GetRegionsInArea(GetRegionsInAreaRequest request)
 	{
-		var territories = _mapManager.GetAllTerritoriesInArea(x, y, width, height);
+		int width = request.X2 - request.X1 + 1;
+		int height = request.Y2 - request.Y1 + 1;
 		
-		return new TerritoriesResponse(territories.ToArray());
+		var territories = _mapManager.GetAllTerritoriesInArea(request.X1, request.Y1, width, height);
+		
+		return new GetRegionsInAreaResponse(territories.ToArray());
 	}
 	
 	public IAsyncEnumerable<MapObjectEvent> SubscribeObjectEvents([EnumeratorCancellation] CancellationToken ct = default)
@@ -35,7 +52,7 @@ public class MapService : ServiceBase<IMapService>, IMapService
 	
 	private async IAsyncEnumerable<MapObjectEvent> CreateEventStream([EnumeratorCancellation] CancellationToken ct)
 	{
-		var channel = System.Threading.Channels.Channel.CreateUnbounded<MapObjectEvent>();
+		var channel = Channel.CreateUnbounded<MapObjectEvent>();
 		
 		void OnAdded(MapObject obj) => channel.Writer.TryWrite(new MapObjectEvent(obj.Id, null, null));
 		void OnRemoved(int id) => channel.Writer.TryWrite(new MapObjectEvent(null, id, null));
@@ -60,9 +77,9 @@ public class MapService : ServiceBase<IMapService>, IMapService
 		}
 		finally
 		{
-			_mapManager.ObjectAdded -= OnAdded;
-			_mapManager.ObjectRemoved -= OnRemoved;
-			_mapManager.ObjectUpdated -= OnUpdated;
+		    _mapManager.ObjectAdded -= OnAdded;
+		    _mapManager.ObjectRemoved -= OnRemoved;
+		    _mapManager.ObjectUpdated -= OnUpdated;
 		}
 	}
 }
