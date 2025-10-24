@@ -27,7 +27,8 @@ public class MapService : ServiceBase<IMapService>, IMapService
 		{
 			for(int x = request.X1; x <= request.X2; x++)
 			{
-			    var tileObjects = _mapManager.GetAllObjectsInArea(x, y, 0); // radius=0 для конкретного тайла
+			    var tileObjects = _mapManager.GetAllObjectsInArea(x, y, 1);
+
 			    objects.AddRange(tileObjects);
 			}
 		}

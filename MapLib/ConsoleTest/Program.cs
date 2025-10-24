@@ -25,8 +25,8 @@ namespace ConsoleTest
 			var id1 = redis.FirstOrDefaultByGeoPoint(geo1);
 			var id2 = redis.FirstOrDefaultByGeoPoint(geo2);
 
-			var objects1 = redis.GetAllObjectsInArea(geo1, 1);
-			var objects2 = redis.GetAllObjectsInArea(geo2, 1000000); // Потому что реальные расстояния
+			var objects1 = redis.GetAllObjectsInRadius(geo1, 1);
+			var objects2 = redis.GetAllObjectsInRadius(geo2, 1000000); // Потому что реальные расстояния
 
 
 		}

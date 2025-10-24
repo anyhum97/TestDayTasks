@@ -260,7 +260,7 @@ namespace MapLib.Map
 		{
 			var point = GeoConverter.ToGeo(new Position(x, y), _width, _height);
 
-			var ids = _redis.GetAllObjectsInArea(point, radius);
+			var ids = _redis.GetAllObjectsInRadius(point, radius);
 
 			var result = new List<MapObject>(ids.Count);
 

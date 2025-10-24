@@ -13,6 +13,6 @@ namespace MapLib.Interfaces
 
 		public int? FirstOrDefaultByGeoPoint(GeoPoint point, double radius = 0.001);
 
-		public IList<int>? GetAllObjectsInArea(GeoPoint point, double radius);
+		public IList<int>? GetAllObjectsInRadius(GeoPoint point, double radius);
 	}
 }

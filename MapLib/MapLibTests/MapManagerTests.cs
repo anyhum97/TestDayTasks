@@ -1,16 +1,20 @@
 using MapLib.Map;
 using MapLib.Map.Objects;
-using MapLib.Helpers;
+using MapLib.Interfaces;
 
-using MapLib.Map.Enums;
-/*
 namespace MapLib.Tests
 {
 	[TestFixture]
 	public class MapManagerTests
 	{
+		private IRedisClient _redis;
+
 		[SetUp]
 		public void Setup()
 		{
-			
-*/
+			_redis = new RedisGeoClient("localhost:6379");
+		}
+
+		
+	}
+}

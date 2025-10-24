@@ -7,6 +7,8 @@ public class RedisGeoClient : IRedisClient
 {
 	private const string _geoKey = "map_objects";
 
+	private readonly ConnectionMultiplexer _connection;
+
 	private readonly IDatabase _db;
 
 	public RedisGeoClient(string connectionString)
@@ -15,9 +17,9 @@ public class RedisGeoClient : IRedisClient
         
 		options.AllowAdmin = true;
 
-		var redis = ConnectionMultiplexer.Connect(options);
+		_connection = ConnectionMultiplexer.Connect(options);
 
-		_db = redis.GetDatabase();
+		_db = _connection.GetDatabase();
 	}
 
 	public bool TryAddGeoPoint(int key, GeoPoint point)
@@ -37,7 +39,7 @@ public class RedisGeoClient : IRedisClient
 	{
 		try
 		{
-			return _db.SetRemove(_geoKey, key.ToString());
+			return _db.SortedSetRemove(_geoKey, key.ToString());
 		}
 		catch(Exception ex)
 		{
@@ -72,7 +74,7 @@ public class RedisGeoClient : IRedisClient
 		return null;
 	}
 
-	public IList<int>? GetAllObjectsInArea(GeoPoint point, double radius)
+	public IList<int>? GetAllObjectsInRadius(GeoPoint point, double radius)
 	{
 		try
 		{
@@ -96,5 +98,22 @@ public class RedisGeoClient : IRedisClient
 		}
 
 		return null;
+	}
+
+	public bool IsConnected()
+	{
+		if(_connection?.IsConnected != true)
+		{
+			return false;
+		}
+
+		try
+		{
+			return _connection.GetServer(_connection.GetEndPoints()[0]).IsConnected;
+		}
+		catch
+		{
+			return false;
+		}
 	}
 }
