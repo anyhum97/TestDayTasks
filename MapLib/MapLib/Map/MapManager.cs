@@ -216,11 +216,11 @@ namespace MapLib.Map
 			return false;
 		}
 
-		public MapObject? FirstOrDefaultByPosition(Position position)
+		public MapObject? FirstOrDefaultByPosition(Position position, double radius)
 		{
 			var point = GeoConverter.ToGeo(position, _width, _height);
 
-			var id = _redis.FirstOrDefaultByGeoPoint(point);
+			var id = _redis.FirstOrDefaultByGeoPoint(point, radius);
 
 			if(id.HasValue)
 			{
