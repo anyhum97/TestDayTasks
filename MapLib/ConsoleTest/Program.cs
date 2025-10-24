@@ -1,7 +1,9 @@
 ﻿using System.Diagnostics;
+
 using MapLib.Map;
 using MapLib.Map.Enums;
 using MapLib.Map.Objects;
+using MapLib.Helpers;
 
 namespace ConsoleTest
 {
@@ -16,7 +18,11 @@ namespace ConsoleTest
 
 		public static void Main()
 		{
-			Benchmark(Test1, 1000, 1000, 5);
+			//Benchmark(Test1, 1000, 1000, 5);
+
+			var redis = new InMemoryRedisClient();
+
+			var manager = new MapManager(redis);
 		}
 
 		private static void Benchmark(BenchmarkWork work, int width = _defaultWidth, int height = _defaultHeight, int iterations = _defaultIterations)

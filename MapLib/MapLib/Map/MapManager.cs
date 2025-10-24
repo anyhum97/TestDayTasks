@@ -13,10 +13,13 @@ namespace MapLib.Map
 		private const int _defaultWidth = 1000;
 		private const int _defaultHeight = 1000;
 
+		private const int _defaultTerritoriesCount = 100;
+
 		private int _width = _defaultWidth;
 		private int _height = _defaultHeight;
 
 		private readonly Dictionary<int, MapObject> _objects = [];
+		private readonly Dictionary<ushort, TerritoryInfo> _territories = [];
 
 		private IRedisClient _redis;
 
@@ -36,26 +39,32 @@ namespace MapLib.Map
 
 		#endregion
 
-		public MapManager(IRedisClient redis, int width = _defaultWidth, int height = _defaultHeight)
+		public MapManager(IRedisClient redis, int width = _defaultWidth, int height = _defaultHeight, int territoriesCount = _defaultTerritoriesCount)
 		{
 			ValidateAndSetBounds(width, height);
 			ValidateAndSetRedis(redis);
+
+			GenerateTerritories(territoriesCount);
 
 			_tiles = new Tile[_width * _height];
 		}
 
-		public MapManager(IRedisClient redis, Tile[] tiles, int width, int height)
+		public MapManager(IRedisClient redis, Tile[] tiles, int width, int height, int territoriesCount = _defaultTerritoriesCount)
 		{
 			ValidateAndSetBounds(width, height);
 			ValidateAndSetTilesArray(tiles, width, height);
 			ValidateAndSetRedis(redis);
+
+			GenerateTerritories(territoriesCount);
 		}
 
-		public MapManager(IRedisClient redis, IEnumerable<Tile> tiles, int width, int height)
+		public MapManager(IRedisClient redis, IEnumerable<Tile> tiles, int width, int height, int territoriesCount = _defaultTerritoriesCount)
 		{
 			ValidateAndSetBounds(width, height);
 			ValidateAndSetTilesCollection(tiles, width, height);
 			ValidateAndSetRedis(redis);
+
+			GenerateTerritories(territoriesCount);
 		}
 
 		/// <summary>
@@ -202,6 +211,9 @@ namespace MapLib.Map
 			return mapObject.Intersects(x, y, width, height);
 		}
 
+		/// <summary>
+		/// Получить все объекты в указанной области.
+		/// </summary>
 		public List<MapObject> GetAllObjectsInArea(int x, int y, int width, int height)
 		{
 			#if DEBUG
@@ -230,6 +242,53 @@ namespace MapLib.Map
 			}
 
 			return result;
+		}
+
+		/// <summary>
+		/// Получение метаданных региона по ID.
+		/// </summary>
+		public bool TryGetTerritoryInfoById(ushort id, out TerritoryInfo? territoryInfo)
+		{
+			return _territories.TryGetValue(id, out territoryInfo);
+		}
+
+		/// <summary>
+		/// Проверяет, принадлежит ли тайл региону.
+		/// </summary>
+		public bool IsTileInTerritory(int tileX, int tileY, TerritoryInfo territoryInfo)
+		{
+			var tile = GetTile(tileX, tileY);
+
+			if(tile.TerritoryId == territoryInfo.Id)
+			{
+				return true;
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		/// Генерация регионов
+		/// </summary>
+		private void GenerateTerritories(int territories)
+		{
+			if(territories >= ushort.MaxValue)
+			{
+				throw new ArgumentOutOfRangeException();
+			}
+
+			for(int i=1; i<=territories; ++i)
+			{
+				var id = (ushort)i;
+
+				var TerritoryInfo = new	TerritoryInfo()
+				{
+					Id = id,
+					Name = $"Territory {i}",
+				};
+
+				_territories.Add(id, TerritoryInfo);
+			}
 		}
 
 		private void ValidateAndSetBounds(int width, int height)
