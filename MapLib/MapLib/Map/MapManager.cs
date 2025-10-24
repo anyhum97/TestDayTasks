@@ -1,9 +1,11 @@
 ﻿using System.Runtime.CompilerServices;
 
+using Microsoft.Extensions.Logging;
+
 using MapLib.Helpers;
 using MapLib.Interfaces;
-using MapLib.Map.Enums;
 using MapLib.Map.Objects;
+using MapLib.Map.Enums;
 
 namespace MapLib.Map
 {
@@ -19,6 +21,8 @@ namespace MapLib.Map
 
 		private int _width = _defaultWidth;
 		private int _height = _defaultHeight;
+
+		private readonly ILogger<MapManager> _logger = Log.For<MapManager>();
 
 		private readonly Dictionary<int, MapObject> _objects = [];
 		private readonly Dictionary<ushort, TerritoryInfo> _territories = [];

@@ -1,4 +1,6 @@
-﻿using StackExchange.Redis;
+﻿using Microsoft.Extensions.Logging;
+
+using StackExchange.Redis;
 
 using MapLib.Interfaces;
 using MapLib.Map.Objects;
@@ -9,6 +11,8 @@ namespace MapLib.Helpers
 	{
 		public const string GeoKey = "map_objects";
 		
+		private readonly ILogger<RedisGeoClient> _logger = Log.For<RedisGeoClient>();
+
 		private readonly ConnectionMultiplexer _connection;
 		
 		private readonly IDatabase _db;
@@ -32,7 +36,8 @@ namespace MapLib.Helpers
 			}
 			catch(Exception ex)
 			{
-				// ToDo - Log
+				_logger.LogError(ex.Message);
+
 				return false;
 			}
 		}
@@ -45,7 +50,8 @@ namespace MapLib.Helpers
 			}
 			catch(Exception ex)
 			{
-				// ToDo - Log
+				_logger.LogError(ex.Message);
+
 				return false;
 			}
 		}
@@ -70,7 +76,7 @@ namespace MapLib.Helpers
 			}
 			catch(Exception ex)
 			{
-				// ToDo - Log
+				_logger.LogError(ex.Message);
 			}
 			
 			return null;
@@ -96,7 +102,7 @@ namespace MapLib.Helpers
 			}
 			catch(Exception ex)
 			{
-				// ToDo - Log
+				_logger.LogError(ex.Message);
 			}
 			
 			return null;

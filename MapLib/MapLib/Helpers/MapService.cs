@@ -4,12 +4,16 @@ using System.Runtime.CompilerServices;
 using MagicOnion;
 using MagicOnion.Server;
 
+using Microsoft.Extensions.Logging;
+
 using MapLib.Map;
 using MapLib.Interfaces;
 using MapLib.Map.Objects;
 
 public class MapService : ServiceBase<IMapService>, IMapService
 {
+	private readonly ILogger<MapService> _logger = Log.For<MapService>();
+
 	private readonly MapManager _mapManager;
 	
 	public MapService(MapManager mapManager)
