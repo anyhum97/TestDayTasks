@@ -268,6 +268,56 @@ namespace MapLib.Map
 		}
 
 		/// <summary>
+		/// Получение всех регионов, пересекающих указанную прямоугольную область.
+		/// </summary>
+		public List<TerritoryInfo> GetAllTerritoriesInArea(int startX, int startY, int width, int height)
+		{
+			#if DEBUG
+
+			if(width <= 0 || height <= 0)
+			{
+				throw new ArgumentOutOfRangeException();
+			}
+
+			#endif
+			
+			var result = new HashSet<ushort>();
+			
+			startX = Math.Max(0, startX);
+			startY = Math.Max(0, startY);
+
+			int rowEnd = Math.Min(startY + height, _height);
+			int colEnd = Math.Min(startX + width, _width);
+			
+			for(int y=startY; y<rowEnd; ++y)
+			{
+				int index= y * _width + startX;
+				
+				for(int x=startX; x<colEnd; ++x, ++index)
+				{
+					var territoryId = _tiles[index].TerritoryId;
+
+					if(territoryId != 0) // 0 = отсутствие территории
+					{
+						result.Add(territoryId);
+					}
+				}
+			}
+			
+			var territories = new List<TerritoryInfo>(result.Count);
+			
+			foreach(var id in result)
+			{
+				if(_territories.TryGetValue(id, out var info))
+				{
+					territories.Add(info);
+				}
+			}
+			
+			return territories;
+		}
+
+		/// <summary>
 		/// Генерация регионов
 		/// </summary>
 		private void GenerateTerritories(int territories)
